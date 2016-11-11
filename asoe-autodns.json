@@ -53,15 +53,20 @@
 					"PolicyName" : "LambdaCodeshipPolicy",
 					"PolicyDocument" : {
 						 "Version" : "2012-10-17",
-						 "Statement": [ {
-							 "Effect"   : "Allow",
-							 "Action"   : [
-									"lambda:UpdateFunctionCode",
-									"lambda:UpdateFunctionConfiguration", 
-									"lambda:GetFunction"
-							 ],
-							 "Resource": { "Fn::GetAtt": ["Lambda", "Arn"] }
-						 } ]
+						 "Statement": [
+               {
+                 "Effect"   : "Allow",
+                 "Action"   : [
+                    "lambda:UpdateFunctionCode",
+                    "lambda:UpdateFunctionConfiguration", 
+                    "lambda:GetFunction",
+                    "lambda:PublishVersion",
+                    "lambda:UpdateAlias",
+                    "lambda:ListAliases"
+                 ],
+                 "Resource": { "Fn::GetAtt": ["Lambda", "Arn"] }
+               }
+             ]
 					},
 					"Users" : [ { "Ref" : "CodeshipIAMUser" } ]
 			 }

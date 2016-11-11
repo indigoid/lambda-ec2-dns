@@ -36,8 +36,18 @@ case $CI_BRANCH in
 esac
 
 # Preparing and deploying the function to Lambda
-aws lambda update-function-code --function-name $LAMBDA_FUNCTION --zip-file "fileb://${HOME}/dist.zip"
+aws lambda update-function-code \
+  --function-name $LAMBDA_FUNCTION \
+  --zip-file "fileb://${HOME}/dist.zip"
 # Publishing a new version of the Lambda function
-version=`aws lambda publish-version --function-name $LAMBDA_FUNCTION | jq -r .Version`
+version="$(aws lambda publish-version \
+  --function-name $LAMBDA_FUNCTION \
+  | jq -r .Version \
+)"
+echo "new version: $version"
 # Updating the production Lambda Alias so it points to the new function
-aws lambda update-alias --function-name $LAMBDA_FUNCTION --function-version "${version}" --name $ALIAS --description "${CI_COMMIT_ID} - ${CI_MESSAGE:0:212}"
+aws lambda update-alias \
+  --function-name $LAMBDA_FUNCTION \
+  --function-version "${version}" \
+  --name $ALIAS \
+  --description "${CI_COMMIT_ID} - ${CI_MESSAGE:0:212}"
