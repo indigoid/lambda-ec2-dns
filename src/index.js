@@ -46,7 +46,7 @@ exports.handler = function(event, context) {
                             if (err) {
                                 console.log(err + "\n" + route53_change_rrs_params, err.stack);
                             } else {
-                                context.succeed("upserted DNS record: " + fqdn + " => " + ip)
+                                context.succeed("upserted DNS record: " + fqdn + " => " + ip);
                             }
                         });
                     } else
