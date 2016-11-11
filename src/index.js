@@ -27,7 +27,7 @@ exports.handler = function(event, context) {
                     if (data.Reservations[0] && data.Reservations[0].Instances[0]) {
                         var ip = data.Reservations[0].Instances[0].PublicIpAddress;
                         console.log(instance_id + " => " + ip);
-                        var fqdn = instance_id + "." + ourname_domain
+                        var fqdn = instance_id + "." + ourname_domain;
                         var route53_change_rrs_params = {
                             ChangeBatch: {
                                 Changes: [ {
@@ -49,7 +49,7 @@ exports.handler = function(event, context) {
                                 context.succeed("upserted DNS record: " + fqdn + " => " + ip);
                             }
                         });
-                    } else
+                    } else {
                         context.fail(new Error("no instance info present: " + data));
                     }
                 }
