@@ -1,0 +1,12 @@
+{
+  "name": "lambda-ec2-dns",
+  "version": "0.0.1",
+  "description": "Automatically creates DNS entries for EC2 instances upon transition to 'running' state",
+  "author": "John Slee",
+  "license": "Apache-2.0",
+  "repository": "https://github.org/indigoid/lambda-ec2-dns",
+  "preferGlobal": true,
+  "dependencies": { },
+  "devDependencies": { }
+}
+

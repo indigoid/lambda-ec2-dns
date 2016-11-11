@@ -1,0 +1,158 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Parameters" : {
+    "HostedZoneId" : {
+      "Type": "String"
+    },
+		"CodeshipIAMUser" : {
+			"Type": "String"
+		}
+  },
+  "Resources": {
+    "LambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+           "Version" : "2012-10-17",
+           "Statement": [ {
+              "Effect": "Allow",
+              "Principal": {
+                 "Service": [ "lambda.amazonaws.com" ]
+              },
+              "Action": [ "sts:AssumeRole" ]
+           } ]
+        },
+        "Path": "/",
+        "Policies": [ {
+					"PolicyName": "root",
+					"PolicyDocument": {
+						"Version" : "2012-10-17",
+						"Statement": [ {
+							"Effect": "Allow",
+							"Action": [ "logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents" ],
+							"Resource": "arn:aws:logs:*:*:*"
+						},
+						{
+							"Effect": "Allow",
+							"Action": [ "ec2:DescribeInstances" ],
+							"Resource": "*"
+            },
+						{
+							"Effect": "Allow",
+							"Action": [ "route53:ChangeResourceRecordSets", "route53:GetHostedZone" ],
+							"Resource": { "Fn::Join": ["", [ "arn:aws:route53:::hostedzone/", { "Ref": "HostedZoneId" } ] ] }
+						} ]
+					}
+        } ]
+      }
+    },
+		
+		"CodeshipPolicy": {
+			 "Type" : "AWS::IAM::Policy",
+			 "Properties" : {
+					"PolicyName" : "LambdaCodeshipPolicy",
+					"PolicyDocument" : {
+						 "Version" : "2012-10-17",
+						 "Statement": [ {
+							 "Effect"   : "Allow",
+							 "Action"   : [
+									"lambda:UpdateFunctionCode",
+									"lambda:UpdateFunctionConfiguration", 
+									"lambda:GetFunction"
+							 ],
+							 "Resource": { "Fn::GetAtt": ["Lambda", "Arn"] }
+						 } ]
+					},
+					"Users" : [ { "Ref" : "CodeshipIAMUser" } ]
+			 }
+		},
+
+    "Lambda": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code" : {
+          "ZipFile" : { "Fn::Join" : ["", [
+            "\n",
+            "console.log('Loading function');\n",
+            "\n",
+            "exports.handler = function(event, context) {\n",
+            "    console.log('Received event:', JSON.stringify(event, null, 2));\n",
+            "    context.succeed(\"SUCCESS\")\n",
+            "};\n",
+            ""
+          ]]}
+        },
+        "Description" : "Node.js Lambda",
+				"FunctionName": { "Fn::Join": ["-", [ { "Ref": "AWS::StackName" }, { "Ref": "HostedZoneId" } ] ] },
+        "Handler" : "index.handler",
+        "MemorySize" : 128,
+        "Role" : {"Fn::GetAtt" : ["LambdaRole", "Arn"] },
+        "Runtime" : "nodejs4.3",
+        "Timeout" : "5"
+      }
+    },
+		"EventRule": {
+			"Type": "AWS::Events::Rule",
+			"Properties": {
+				"Description": "EventRule",
+				"EventPattern": {
+					"source": [
+						"aws.ec2"
+					],
+					"detail-type": [
+						"EC2 Instance State-change Notification"
+					],
+					"detail": {
+						"state": [
+							"running"
+						]
+					}
+				},
+				"State": "ENABLED",
+				"Targets": [{
+					"Arn": { "Fn::GetAtt": ["Lambda", "Arn"] },
+					"Id": "TargetFunctionV1"
+				}]
+			}
+		},
+    "LambdaAliasProduction" : {
+      "Type" : "AWS::Lambda::Alias",
+      "Properties" : {
+        "FunctionName" : { "Ref" : "Lambda" },
+        "FunctionVersion" : "$LATEST",
+        "Name" : "production"
+      }
+    },
+    "LambdaAliasDevelop" : {
+      "Type" : "AWS::Lambda::Alias",
+      "Properties" : {
+        "FunctionName" : { "Ref" : "Lambda" },
+        "FunctionVersion" : "$LATEST",
+        "Name" : "develop"
+      }
+    },
+		"PermissionForEventsToInvokeLambda": {
+			"Type": "AWS::Lambda::Permission",
+			"Properties": {
+				"FunctionName": { "Ref": "Lambda" },
+				"Action": "lambda:InvokeFunction",
+				"Principal": "events.amazonaws.com",
+				"SourceArn": { "Fn::GetAtt": ["EventRule", "Arn"] }
+			}
+		}
+
+  },
+  "Outputs": {
+    "LambdaRole": {
+      "Description": "IAM Role for LambdaRole",
+      "Value": {
+        "Ref": "LambdaRole"
+      }
+    },
+    "Lambda": {
+      "Value": {
+        "Fn::GetAtt" : [ "Lambda", "Arn" ]
+      }
+    }
+  }
+}
