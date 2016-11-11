@@ -53,7 +53,7 @@ exports.handler = function(event, context) {
                         context.fail(new Error("no instance info present: " + data));
                     }
                 }
-            );
+            });
         }
     });
 };
