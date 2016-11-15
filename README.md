@@ -11,9 +11,18 @@ CloudWatch Rule -> Lambda -> Route53
 
 ## CloudFormation
 
-Because plugging all the moving parts together by hand is painful, lets
-just do some small manual steps at the end. This assumes you already
-have an IAM user for Codeship integration. It then creates:
+Because plugging all the moving parts together by hand is painful, I've
+put as much as possible into a CloudFormation template.
+
+It takes two parameters:
+
+- `HostedZoneId` which should have the Route53 hosted zone ID of the
+  zone you want your new DNS entries to appear in
+- `CodeshipIAMUser` which should have the name of the IAM user you want
+  to use for autodeploying this code with Codeship.
+
+When the template is deployed (see commands in the Stack Creation
+section) the following resources are created:
 
 - Codeship IAM policy (and attaches it to the specified user)
 - IAM role for the Lambda function
@@ -49,6 +58,24 @@ have an IAM user for Codeship integration. It then creates:
 More information on this can be found here:
 
 https://blog.codeship.com/integrating-aws-lambda-with-codeship/
+
+Note that to get this deploying with Codeship, you'll need to define the
+below environment variables:
+
+- `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` with the API
+  key/secret for your Codeship IAM user
+- `AWS_DEFAULT_REGION` with the region you created the CloudFormation
+  stack in
+- `LAMBDA_FUNCTION` with the contents of the `Lambda` output from the
+  CloudFormation stack
+
+## Todo
+
+- get configuration from S3 instead
+- don't lookup the hosted zone info every invocation because that's yuk
+- optionally cache the DescribeInstance data in an Elasticache store for
+  later use (such as by a related Lambda function that runs at instance
+  termination...)
 
 ## Notes
 
