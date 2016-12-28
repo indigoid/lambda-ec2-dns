@@ -1,13 +1,12 @@
 # lambda-ec2-dns
 
-[ ![Codeship Status for fairfax/oh-kiwiops-lambda-akamai-ccu](https://codeship.com/projects/c20816a0-ddc8-0133-ba29-6a683e002de2/status?branch=master)](https://codeship.com/projects/144511)
+[ ![Codeship Status for indigoid/lambda-ec2-dns](https://app.codeship.com/projects/c7483940-8a4a-0134-69f7-5a7c9acf56e8/status?branch=master)](https://app.codeship.com/projects/184451)
 
 Designed to be integrated with Codeship.
 
 ## Event flow
 
 CloudWatch Rule -> Lambda -> Route53
-
 
 ## CloudFormation
 
@@ -33,24 +32,28 @@ section) the following resources are created:
 
 ### Stack Creation
 
-    export AWS_DEFAULT_REGION=appropriate_region
-    aws cloudformation create-stack \
+    # note here that the HostedZoneName parameter must have a trailing .
+    # ie. "your.domain." *not* "your.domain"
+    aws --region=your-region cloudformation create-stack \
       --stack-name asoe-autodns \
       --template-body file://asoe-autodns.json \
       --capabilities CAPABILITY_IAM \
       --parameters \
         ParameterKey=HostedZoneId,ParameterValue=YOUR_HOSTED_ZONE_ID \
+        ParameterKey=HostedZoneName,ParameterValue=your.domain. \
         ParameterKey=CodeshipIAMUser,ParameterValue=svc_codeship
 
 ### Stack Update
 
-    export AWS_DEFAULT_REGION=appropriate_region
-    aws cloudformation update-stack \
+    # note here that the HostedZoneName parameter must have a trailing .
+    # ie. "your.domain." *not* "your.domain"
+    aws --region your-region cloudformation update-stack \
       --stack-name asoe-autodns \
       --template-body file://asoe-autodns.json \
       --capabilities CAPABILITY_IAM \
       --parameters \
         ParameterKey=HostedZoneId,ParameterValue=YOUR_HOSTED_ZONE_ID \
+        ParameterKey=HostedZoneName,ParameterValue=your.domain. \
         ParameterKey=CodeshipIAMUser,ParameterValue=svc_codeship
 
 ## Codeship Integration
