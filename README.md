@@ -13,10 +13,13 @@ CloudWatch Rule -> Lambda -> Route53
 Because plugging all the moving parts together by hand is painful, I've
 put as much as possible into a CloudFormation template.
 
-It takes two parameters:
+It takes three parameters:
 
 - `HostedZoneId` which should have the Route53 hosted zone ID of the
-  zone you want your new DNS entries to appear in
+  zone you want your new DNS entries to appear in. Eg. `Z354G969XV9QZ9`
+- `HostedZoneName` which should have the domain name under which your
+  DNS entries should be created. eg. `apse2.mydomain.com.`; note that
+  this *must* have a trailing dot.
 - `CodeshipIAMUser` which should have the name of the IAM user you want
   to use for autodeploying this code with Codeship.
 
