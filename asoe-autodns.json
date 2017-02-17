@@ -1,160 +1,228 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Parameters" : {
-    "HostedZoneId" : {
+  "Parameters": {
+    "HostedZoneId": {
       "Type": "String"
     },
-    "HostedZoneName" : {
+    "HostedZoneName": {
       "Type": "String"
     },
-		"CodeshipIAMUser" : {
-			"Type": "String"
-		}
+    "CodeshipIAMUser": {
+      "Type": "String"
+    }
   },
   "Resources": {
     "LambdaRole": {
       "Type": "AWS::IAM::Role",
       "Properties": {
         "AssumeRolePolicyDocument": {
-           "Version" : "2012-10-17",
-           "Statement": [ {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
               "Effect": "Allow",
               "Principal": {
-                 "Service": [ "lambda.amazonaws.com" ]
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
               },
-              "Action": [ "sts:AssumeRole" ]
-           } ]
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
         },
         "Path": "/",
-        "Policies": [ {
-					"PolicyName": "root",
-					"PolicyDocument": {
-						"Version" : "2012-10-17",
-						"Statement": [ {
-							"Effect": "Allow",
-							"Action": [ "logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents" ],
-							"Resource": "arn:aws:logs:*:*:*"
-						},
-						{
-							"Effect": "Allow",
-							"Action": [ "ec2:DescribeInstances" ],
-							"Resource": "*"
-            },
-						{
-							"Effect": "Allow",
-							"Action": [ "route53:ChangeResourceRecordSets" ],
-							"Resource": { "Fn::Join": ["", [ "arn:aws:route53:::hostedzone/", { "Ref": "HostedZoneId" } ] ] }
-						} ]
-					}
-        } ]
+        "Policies": [
+          {
+            "PolicyName": "root",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": "arn:aws:logs:*:*:*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ec2:DescribeInstances"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "route53:ChangeResourceRecordSets"
+                  ],
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:aws:route53:::hostedzone/",
+                        {
+                          "Ref": "HostedZoneId"
+                        }
+                      ]
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
       }
     },
-		
-		"CodeshipPolicy": {
-			 "Type" : "AWS::IAM::Policy",
-			 "Properties" : {
-					"PolicyName" : "LambdaCodeshipPolicy",
-					"PolicyDocument" : {
-						 "Version" : "2012-10-17",
-						 "Statement": [
-               {
-                 "Effect"   : "Allow",
-                 "Action"   : [
-                    "lambda:UpdateFunctionCode",
-                    "lambda:UpdateFunctionConfiguration", 
-                    "lambda:GetFunction",
-                    "lambda:PublishVersion",
-                    "lambda:UpdateAlias",
-                    "lambda:ListAliases"
-                 ],
-                 "Resource": { "Fn::GetAtt": ["Lambda", "Arn"] }
-               }
-             ]
-					},
-					"Users" : [ { "Ref" : "CodeshipIAMUser" } ]
-			 }
-		},
-
+    "CodeshipPolicy": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "LambdaCodeshipPolicy",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "lambda:UpdateFunctionCode",
+                "lambda:UpdateFunctionConfiguration",
+                "lambda:GetFunction",
+                "lambda:PublishVersion",
+                "lambda:UpdateAlias",
+                "lambda:ListAliases"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "Lambda",
+                  "Arn"
+                ]
+              }
+            }
+          ]
+        },
+        "Users": [
+          {
+            "Ref": "CodeshipIAMUser"
+          }
+        ]
+      }
+    },
     "Lambda": {
       "Type": "AWS::Lambda::Function",
       "Properties": {
         "Environment": {
           "Variables": {
-            "route53_hosted_zone_id": { "Ref": "HostedZoneId" },
-            "route53_hosted_zone_name": { "Ref": "HostedZoneName" }
+            "route53_hosted_zone_id": {
+              "Ref": "HostedZoneId"
+            },
+            "route53_hosted_zone_name": {
+              "Ref": "HostedZoneName"
+            }
           }
         },
-        "Code" : {
-          "ZipFile" : { "Fn::Join" : ["", [
-            "\n",
-            "console.log('Loading function');\n",
-            "\n",
-            "exports.handler = function(event, context) {\n",
-            "    console.log('Received event:', JSON.stringify(event, null, 2));\n",
-            "    context.succeed(\"SUCCESS\")\n",
-            "};\n",
-            ""
-          ]]}
+        "Code": {
+          "ZipFile": {
+            "Fn::Join": [
+              "",
+              [
+                "\n",
+                "console.log('Loading function');\n",
+                "\n",
+                "exports.handler = function(event, context) {\n",
+                "    console.log('Received event:', JSON.stringify(event, null, 2));\n",
+                "    context.succeed(\"SUCCESS\")\n",
+                "};\n",
+                ""
+              ]
+            ]
+          }
         },
-        "Description" : "Node.js Lambda",
-				"FunctionName": { "Ref": "AWS::StackName" },
-        "Handler" : "index.handler",
-        "MemorySize" : 128,
-        "Role" : {"Fn::GetAtt" : ["LambdaRole", "Arn"] },
-        "Runtime" : "nodejs4.3",
-        "Timeout" : "5"
+        "Description": "Node.js Lambda",
+        "FunctionName": {
+          "Ref": "AWS::StackName"
+        },
+        "Handler": "index.handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdaRole",
+            "Arn"
+          ]
+        },
+        "Runtime": "nodejs4.3",
+        "Timeout": "5"
       }
     },
-		"EventRule": {
-			"Type": "AWS::Events::Rule",
-			"Properties": {
-				"Description": "EventRule",
-				"EventPattern": {
-					"source": [
-						"aws.ec2"
-					],
-					"detail-type": [
-						"EC2 Instance State-change Notification"
-					],
-					"detail": {
-						"state": [
-							"running"
-						]
-					}
-				},
-				"State": "ENABLED",
-				"Targets": [{
-					"Arn": { "Fn::GetAtt": ["Lambda", "Arn"] },
-					"Id": "TargetFunctionV1"
-				}]
-			}
-		},
-    "LambdaAliasProduction" : {
-      "Type" : "AWS::Lambda::Alias",
-      "Properties" : {
-        "FunctionName" : { "Ref" : "Lambda" },
-        "FunctionVersion" : "$LATEST",
-        "Name" : "production"
+    "EventRule": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Description": "EventRule",
+        "EventPattern": {
+          "source": [
+            "aws.ec2"
+          ],
+          "detail-type": [
+            "EC2 Instance State-change Notification"
+          ],
+          "detail": {
+            "state": [
+              "running"
+            ]
+          }
+        },
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Fn::GetAtt": [
+                "Lambda",
+                "Arn"
+              ]
+            },
+            "Id": "TargetFunctionV1"
+          }
+        ]
       }
     },
-    "LambdaAliasDevelop" : {
-      "Type" : "AWS::Lambda::Alias",
-      "Properties" : {
-        "FunctionName" : { "Ref" : "Lambda" },
-        "FunctionVersion" : "$LATEST",
-        "Name" : "develop"
+    "LambdaAliasProduction": {
+      "Type": "AWS::Lambda::Alias",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "Lambda"
+        },
+        "FunctionVersion": "$LATEST",
+        "Name": "production"
       }
     },
-		"PermissionForEventsToInvokeLambda": {
-			"Type": "AWS::Lambda::Permission",
-			"Properties": {
-				"FunctionName": { "Ref": "Lambda" },
-				"Action": "lambda:InvokeFunction",
-				"Principal": "events.amazonaws.com",
-				"SourceArn": { "Fn::GetAtt": ["EventRule", "Arn"] }
-			}
-		}
-
+    "LambdaAliasDevelop": {
+      "Type": "AWS::Lambda::Alias",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "Lambda"
+        },
+        "FunctionVersion": "$LATEST",
+        "Name": "develop"
+      }
+    },
+    "PermissionForEventsToInvokeLambda": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "Lambda"
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "events.amazonaws.com",
+        "SourceArn": {
+          "Fn::GetAtt": [
+            "EventRule",
+            "Arn"
+          ]
+        }
+      }
+    }
   },
   "Outputs": {
     "LambdaRole": {
@@ -165,7 +233,10 @@
     },
     "Lambda": {
       "Value": {
-        "Fn::GetAtt" : [ "Lambda", "Arn" ]
+        "Fn::GetAtt": [
+          "Lambda",
+          "Arn"
+        ]
       }
     }
   }
